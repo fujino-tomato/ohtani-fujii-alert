@@ -2,27 +2,25 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 
-url = "https://shogi-sanpo.com/fujiisouta/result/"
+url = "https://www.shogi.or.jp/player/pro/307.html"
 res = requests.get(url)
 res.encoding = "utf-8"
 
 soup = BeautifulSoup(res.text, "html.parser")
-elems = soup.select("#mainArea > div:nth-child(21) > div > ul > li")
+elems = soup.select("#contents > div.sp_player_matchresult > div > table > tbody")
+elem = elems[0]
 
 # ラベルの作成
-elem = elems[0]
 label = []
-for div in elem.find_all("div"):
-    label.append(div.text)
-df = pd.DataFrame(columns=label)
+for tb_col in elem.find_all("th"):
+    label.append(tb_col.text)
 
 # 中身のデータの追加
-for i in range(1, 6):
-    print(i)
-    data = []
-    for div in elems[i].find_all("div"):
-        print(div.text)
-        data.append(div.text)
-    df.loc[i-1] = data
-
-print(df)
+data = []
+for data_ind in elem.find_all("tr"):
+    d = {}
+    for i, data_col in enumerate(data_ind.find_all("td")):
+        d[label[i]] = data_col.text
+    data.append(d)
+df = pd.DataFrame(data, columns=label, index=None)
+df.to_csv("../fujii.csv")
